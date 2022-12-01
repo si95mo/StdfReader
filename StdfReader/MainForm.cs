@@ -18,6 +18,7 @@ namespace StdfReader
         private const string BaseText = "Stdf reader";
 
         private Dictionary<string, Color> colors;
+        private Dictionary<string, int> recordCounter;
 
         private Excel excel;
         private Workbook workbook;
@@ -37,6 +38,8 @@ namespace StdfReader
             bgWorker.DoWork += BgWorker_DoWork;
 
             colors = new Dictionary<string, Color>();
+            recordCounter = new Dictionary<string, int>();
+            recordCounter.Add("Total", 0);
 
             excel = new Excel
             {
@@ -79,8 +82,19 @@ namespace StdfReader
             foreach (StdfRecord record in records)
             {
                 string type = record.GetType().Name;
+
                 if (!colors.ContainsKey(type))
                     colors.Add(type, GenerateColor(type));
+
+                if (type != "StartOfStreamRecord" && type != "EndOfStreamRecord") // Non stdf-related records
+                {
+                    recordCounter["Total"]++;
+
+                    if (!recordCounter.ContainsKey(type)) // If the counter dictionary does not contain the record type
+                        recordCounter.Add(type, 1); // Add the key and set the counter to 1
+                    else
+                        recordCounter[type]++; // Else (key contained), increment the relative counter
+                }
             }
 
             return records;
@@ -148,29 +162,50 @@ namespace StdfReader
                             }
 
                             TreeNode leaf = new TreeNode($"{property.Name.ToSentenceCase()}: {valueAsString}");
+                            leaf.ForeColor = SystemColors.Info;
+
                             root.Nodes.Add(leaf);
                         }
                         else // Third level node
                         {
                             object[] array = value as object[];
                             TreeNode node = new TreeNode(property.Name.ToSentenceCase());
+                            node.ForeColor = SystemColors.MenuHighlight;
 
                             if (array != null) // Third level node values (object array)
                             {
                                 List<object> objects = array.ToList();
                                 objects.ForEach((x) =>
                                     {
+                                        TreeNode leaf;
                                         if (!(x is byte))
-                                            node.Nodes.Add(new TreeNode(x.ToString()));
+                                        {
+                                            leaf = new TreeNode(x.ToString());
+                                            leaf.ForeColor = SystemColors.Info;
+
+                                            node.Nodes.Add(leaf);
+                                        }
                                         else
-                                            node.Nodes.Add(new TreeNode(Convert.ToString((byte)x, toBase: 2).PadLeft(8, '0')));
+                                        {
+                                            leaf = new TreeNode(Convert.ToString((byte)x, toBase: 2).PadLeft(8, '0'));
+                                            leaf.ForeColor = SystemColors.Info;
+
+                                            node.Nodes.Add(leaf);
+                                        }
                                     }
                                 );
                             }
                             else // Third level node values (byte array)
                             {
                                 byte[] bytes = value as byte[];
-                                bytes.ToList().ForEach(x => node.Nodes.Add(new TreeNode(Convert.ToString(x, toBase: 2).PadLeft(8, '0'))));
+                                bytes.ToList().ForEach((x) =>
+                                    {
+                                        TreeNode leaf = new TreeNode(Convert.ToString(x, toBase: 2).PadLeft(8, '0'));
+                                        leaf.ForeColor = SystemColors.Info;
+
+                                        node.Nodes.Add(leaf);
+                                    }
+                                );
                             }
 
                             root.Nodes.Add(node);
@@ -219,6 +254,18 @@ namespace StdfReader
                 Populate(record, treeView, index++);
 
             treeView.ShowNodeToolTips = true;
+
+            string entry = string.Empty;
+            foreach (KeyValuePair<string, int> pair in recordCounter)
+            {
+                if (pair.Key != "Total")
+                    entry += $"{pair.Key}: {pair.Value}, ";
+            }
+
+            entry = entry.TrimEnd(new char[] { ',', ' ' }); // Remove trailing blank space
+            entry += $". Total: {recordCounter["Total"]}";
+
+            lblRecordCounter.Text = entry;
         }
 
         /// <summary>
@@ -228,7 +275,7 @@ namespace StdfReader
         /// <returns>The generated <see cref="Color"/></returns>
         private Color GenerateColor(string seed)
         {
-            Color color = Color.Green;
+            Color color = Color.DimGray;
 
             switch (seed)
             {
@@ -247,6 +294,9 @@ namespace StdfReader
                 case "Prr":
                     color = Color.Coral;
                     break;
+                case "Gdr":
+                    color = Color.Green;
+                    break;
                 case "Pcr":
                     color = Color.BlanchedAlmond;
                     break;
@@ -255,6 +305,9 @@ namespace StdfReader
                     break;
                 case "Tsr":
                     color = Color.Orange;
+                    break;
+                case "Mrr":
+                    color = Color.MediumVioletRed;
                     break;
             }
 
@@ -370,6 +423,7 @@ namespace StdfReader
         private void BtnOpenFile_Click(object sender, EventArgs e)
         {
             lblStatus.Text = "Waiting for I/O operation...";
+            lblRecordCounter.Text = "--";
             Text = BaseText + $" - {lblStatus.Text}";
 
             string path = ChooseFile();

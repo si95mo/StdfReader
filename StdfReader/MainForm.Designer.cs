@@ -36,6 +36,7 @@
             this.btnExpandAll = new System.Windows.Forms.Button();
             this.btnCollapseAll = new System.Windows.Forms.Button();
             this.btnExport = new System.Windows.Forms.Button();
+            this.lblRecordCounter = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // btnOpenFile
@@ -47,7 +48,7 @@
             this.btnOpenFile.Location = new System.Drawing.Point(12, 13);
             this.btnOpenFile.Margin = new System.Windows.Forms.Padding(4);
             this.btnOpenFile.Name = "btnOpenFile";
-            this.btnOpenFile.Size = new System.Drawing.Size(100, 47);
+            this.btnOpenFile.Size = new System.Drawing.Size(92, 47);
             this.btnOpenFile.TabIndex = 0;
             this.btnOpenFile.Text = "Open file";
             this.btnOpenFile.UseVisualStyleBackColor = false;
@@ -82,7 +83,7 @@
             this.btnExpandAll.Location = new System.Drawing.Point(12, 68);
             this.btnExpandAll.Margin = new System.Windows.Forms.Padding(4);
             this.btnExpandAll.Name = "btnExpandAll";
-            this.btnExpandAll.Size = new System.Drawing.Size(100, 31);
+            this.btnExpandAll.Size = new System.Drawing.Size(92, 31);
             this.btnExpandAll.TabIndex = 3;
             this.btnExpandAll.Text = "Expand all";
             this.btnExpandAll.UseVisualStyleBackColor = false;
@@ -94,10 +95,10 @@
             this.btnCollapseAll.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnCollapseAll.Font = new System.Drawing.Font("Lucida Sans Unicode", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnCollapseAll.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.btnCollapseAll.Location = new System.Drawing.Point(122, 68);
+            this.btnCollapseAll.Location = new System.Drawing.Point(112, 68);
             this.btnCollapseAll.Margin = new System.Windows.Forms.Padding(4);
             this.btnCollapseAll.Name = "btnCollapseAll";
-            this.btnCollapseAll.Size = new System.Drawing.Size(100, 31);
+            this.btnCollapseAll.Size = new System.Drawing.Size(91, 31);
             this.btnCollapseAll.TabIndex = 4;
             this.btnCollapseAll.Text = "Collapse all";
             this.btnCollapseAll.UseVisualStyleBackColor = false;
@@ -109,15 +110,25 @@
             this.btnExport.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnExport.Font = new System.Drawing.Font("Lucida Sans Unicode", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnExport.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.btnExport.Location = new System.Drawing.Point(551, 68);
+            this.btnExport.Location = new System.Drawing.Point(561, 68);
             this.btnExport.Margin = new System.Windows.Forms.Padding(4);
             this.btnExport.Name = "btnExport";
-            this.btnExport.Size = new System.Drawing.Size(100, 31);
+            this.btnExport.Size = new System.Drawing.Size(91, 31);
             this.btnExport.TabIndex = 5;
             this.btnExport.Text = "Export";
             this.btnExport.UseVisualStyleBackColor = false;
             this.btnExport.Visible = false;
             this.btnExport.Click += new System.EventHandler(this.BtnExport_Click);
+            // 
+            // lblRecordCounter
+            // 
+            this.lblRecordCounter.Font = new System.Drawing.Font("Lucida Sans Unicode", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblRecordCounter.Location = new System.Drawing.Point(210, 68);
+            this.lblRecordCounter.Name = "lblRecordCounter";
+            this.lblRecordCounter.Size = new System.Drawing.Size(344, 31);
+            this.lblRecordCounter.TabIndex = 6;
+            this.lblRecordCounter.Text = "--";
+            this.lblRecordCounter.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // MainForm
             // 
@@ -125,6 +136,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
             this.ClientSize = new System.Drawing.Size(664, 921);
+            this.Controls.Add(this.lblRecordCounter);
             this.Controls.Add(this.btnExport);
             this.Controls.Add(this.btnCollapseAll);
             this.Controls.Add(this.btnExpandAll);
@@ -152,6 +164,7 @@
         private System.Windows.Forms.Button btnExpandAll;
         private System.Windows.Forms.Button btnCollapseAll;
         private System.Windows.Forms.Button btnExport;
+        private System.Windows.Forms.Label lblRecordCounter;
     }
 }
 
