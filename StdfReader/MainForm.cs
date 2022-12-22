@@ -3,6 +3,7 @@ using LinqToStdf.Records;
 using Microsoft.Office.Interop.Excel;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -35,7 +36,8 @@ namespace StdfReader
             InitializeComponent();
             CenterToScreen();
 
-            bgWorker.DoWork += BgWorker_DoWork;
+            bgReaderWorker.DoWork += BgReaderWorker_DoWork;
+            bgExcelWorker.DoWork += BgExcelWorker_DoWork;
 
             colors = new Dictionary<string, Color>();
             recordCounter = new Dictionary<string, int>();
@@ -265,6 +267,13 @@ namespace StdfReader
             entry = entry.TrimEnd(new char[] { ',', ' ' }); // Remove trailing blank space
             entry += $". Total: {recordCounter["Total"]}";
 
+            List<string> dataSource = new List<string>();
+            dataSource.Add("None");
+            dataSource.AddRange(recordCounter.Keys.Where((x) => x != "Total"));
+
+            cbxFilter.DataSource = dataSource;
+            cbxFilter.SelectedIndex = 0;
+
             lblRecordCounter.Text = entry;
         }
 
@@ -322,6 +331,8 @@ namespace StdfReader
         {
             string xlsxPath = Path.ChangeExtension(lblStatus.Text, "xlsx");
             bool doesFileExists = File.Exists(xlsxPath);
+            if (doesFileExists)
+                File.Delete(xlsxPath);
 
             workbook = doesFileExists ? excel.Workbooks.Open(xlsxPath, ReadOnly: false) : excel.Workbooks.Add();
             worksheet = (Worksheet)workbook.Sheets[1];
@@ -341,7 +352,7 @@ namespace StdfReader
                 {
                     PropertyInfo[] properties = type.GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance);
 
-                    sheet.Cells[2, index].Value = record.GetType().Name; // Record name
+                    sheet.Cells[index, 1].Value = record.GetType().Name; // Record name
 
                     int counter = 3;
                     foreach (PropertyInfo property in properties)
@@ -358,8 +369,8 @@ namespace StdfReader
                                         valueAsString = Convert.ToString((byte)value, toBase: 2).PadLeft(8, '0');
                                 }
 
-                                sheet.Cells[counter, index] = property.Name.ToSentenceCase();
-                                sheet.Cells[counter, index + 1] = valueAsString;
+                                sheet.Cells[index, counter] = property.Name.ToSentenceCase();
+                                sheet.Cells[index, counter + 1] = valueAsString;
                             }
                             else // Third level node
                             {
@@ -378,8 +389,8 @@ namespace StdfReader
                                         }
                                     );
 
-                                    sheet.Cells[counter, index] = property.Name.ToSentenceCase();
-                                    sheet.Cells[counter, index + 1] = valueAsString;
+                                    sheet.Cells[index, counter] = property.Name.ToSentenceCase();
+                                    sheet.Cells[index, counter + 1] = valueAsString;
                                 }
                                 else // Third level node values (byte array)
                                 {
@@ -388,8 +399,8 @@ namespace StdfReader
                                     byte[] bytes = value as byte[];
                                     bytes.ToList().ForEach(x => valueAsString += Convert.ToString(x, toBase: 2).PadLeft(8, '0'));
 
-                                    sheet.Cells[counter, index] = property.Name.ToSentenceCase();
-                                    sheet.Cells[counter, index + 1] = valueAsString;
+                                    sheet.Cells[index, counter] = property.Name.ToSentenceCase();
+                                    sheet.Cells[index, counter + 1] = valueAsString;
                                 }
                             }
                         }
@@ -414,6 +425,14 @@ namespace StdfReader
                 Type.Missing
             );
             excel.Quit();
+
+            ProcessStartInfo startInfo = new ProcessStartInfo()
+            {
+                FileName = xlsxPath
+            };
+            Process process = new Process();
+            process.StartInfo = startInfo;
+            process.Start();
         }
 
         #endregion Helper methods
@@ -430,16 +449,24 @@ namespace StdfReader
             if (path.CompareTo(string.Empty) != 0)
             {
                 lblStatus.Text = path;
-                bgWorker.RunWorkerAsync();
+                bgReaderWorker.RunWorkerAsync();
             }
         }
 
-        private void BgWorker_DoWork(object sender, System.ComponentModel.DoWorkEventArgs e)
+        private void BgReaderWorker_DoWork(object sender, System.ComponentModel.DoWorkEventArgs e)
         {
             if (!InvokeRequired)
                 PopulateControl(lblStatus.Text, trvRecords);
             else
                 BeginInvoke(new System.Action(() => PopulateControl(lblStatus.Text, trvRecords)));
+        }
+
+        private void BgExcelWorker_DoWork(object sender, System.ComponentModel.DoWorkEventArgs e)
+        {
+            if (!InvokeRequired)
+                ExportToExcel();
+            else
+                BeginInvoke(new System.Action(() => ExportToExcel()));
         }
 
         private void BtnExpandAll(object sender, EventArgs e)
@@ -449,7 +476,23 @@ namespace StdfReader
             => trvRecords.CollapseAll();
 
         private void BtnExport_Click(object sender, EventArgs e)
-            => ExportToExcel();
+            => bgExcelWorker.RunWorkerAsync();
+
+        private void CbxFilter_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            string nodeToShow = cbxFilter.SelectedItem.ToString();
+
+            if (nodeToShow != "None")
+            {
+                foreach (TreeNode node in trvRecords.Nodes)
+                {
+                    if (node.Text == nodeToShow)
+                        node.Expand();
+                    else
+                        node.Collapse();
+                }
+            }
+        }
 
         #endregion Event handlers
     }
