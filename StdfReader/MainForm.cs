@@ -319,14 +319,20 @@ namespace StdfReader
                 case "Gdr":
                     color = Color.Green;
                     break;
+                case "Hbr":
+                    color = Color.Brown;
+                    break;
+                case "Sbr":
+                    color = Color.PapayaWhip;
+                    break;
                 case "Pcr":
-                    color = Color.BlanchedAlmond;
+                    color = Color.DarkGoldenrod;
                     break;
                 case "Sdr":
                     color = Color.BlueViolet;
                     break;
                 case "Tsr":
-                    color = Color.Orange;
+                    color = Color.DarkOrange;
                     break;
                 case "Mrr":
                     color = Color.MediumVioletRed;
