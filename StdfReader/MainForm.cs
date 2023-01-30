@@ -17,6 +17,7 @@ namespace StdfReader
     public partial class MainForm : Form
     {
         private const string BaseText = "Stdf reader";
+        private const string NullAsString = "null";
 
         private Dictionary<string, Color> colors;
         private Dictionary<string, int> recordCounter;
@@ -27,6 +28,8 @@ namespace StdfReader
         private Worksheet sheet;
 
         private List<StdfRecord> entries;
+
+        private TreeNode highlightedNode;
 
         /// <summary>
         /// Create a new instance of <see cref="MainForm"/>
@@ -152,27 +155,32 @@ namespace StdfReader
                 foreach (PropertyInfo property in properties)
                 {
                     object value = property.GetValue(record, null);
-                    if (value != null && value != value.GetType().GetDefaultValue() && property.Name.CompareTo("RecordType") != 0) // Remove empty record fields
+                    if ((value != value?.GetType().GetDefaultValue() || value == null) && property.Name.CompareTo("RecordType") != 0) // Remove empty record fields
                     {
-                        if (!value.GetType().IsArray) // Second level node
+                        if (value == null || !value.GetType().IsArray) // Second level node
                         {
-                            string valueAsString = value.ToString();
+                            string valueAsString = value?.ToString() ?? NullAsString;
                             if (value is byte)
                             {
-                                if (property.Name.Contains("Flag") || property.Name.Contains("flag"))
-                                    valueAsString = Convert.ToString((byte)value, toBase: 2).PadLeft(8, '0');
+                                if (value != null && property.Name.Contains("Flag") || property.Name.Contains("flag"))
+                                    valueAsString = $"0b{Convert.ToString((byte)value, toBase: 2).PadLeft(8, '0')}";
+                                else if (value == null)
+                                    valueAsString = NullAsString;
                             }
 
-                            TreeNode leaf = new TreeNode($"{property.Name.ToSentenceCase()}: {valueAsString}");
-                            leaf.ForeColor = SystemColors.Info;
-
+                            TreeNode leaf = new TreeNode($"{property.Name.ToSentenceCase()}: {valueAsString}")
+                            {
+                                ForeColor = SystemColors.Info
+                            };
                             root.Nodes.Add(leaf);
                         }
-                        else // Third level node
+                        else if(value.GetType().IsArray) // Third level node
                         {
                             object[] array = value as object[];
-                            TreeNode node = new TreeNode(property.Name.ToSentenceCase());
-                            node.ForeColor = SystemColors.MenuHighlight;
+                            TreeNode node = new TreeNode(property.Name.ToSentenceCase())
+                            {
+                                ForeColor = SystemColors.MenuHighlight
+                            };
 
                             if (array != null) // Third level node values (object array)
                             {
@@ -182,16 +190,18 @@ namespace StdfReader
                                         TreeNode leaf;
                                         if (!(x is byte))
                                         {
-                                            leaf = new TreeNode(x.ToString());
-                                            leaf.ForeColor = SystemColors.Info;
-
+                                            leaf = new TreeNode(x.ToString())
+                                            {
+                                                ForeColor = SystemColors.Info
+                                            };
                                             node.Nodes.Add(leaf);
                                         }
                                         else
                                         {
-                                            leaf = new TreeNode(Convert.ToString((byte)x, toBase: 2).PadLeft(8, '0'));
-                                            leaf.ForeColor = SystemColors.Info;
-
+                                            leaf = new TreeNode($"0b{Convert.ToString((byte)x, toBase: 2).PadLeft(8, '0')}")
+                                            {
+                                                ForeColor = SystemColors.Info
+                                            };
                                             node.Nodes.Add(leaf);
                                         }
                                     }
@@ -202,9 +212,10 @@ namespace StdfReader
                                 byte[] bytes = value as byte[];
                                 bytes.ToList().ForEach((x) =>
                                     {
-                                        TreeNode leaf = new TreeNode(Convert.ToString(x, toBase: 2).PadLeft(8, '0'));
-                                        leaf.ForeColor = SystemColors.Info;
-
+                                        TreeNode leaf = new TreeNode($"0b{Convert.ToString((byte)x, toBase: 2).PadLeft(8, '0')}")
+                                        {
+                                            ForeColor = SystemColors.Info
+                                        };
                                         node.Nodes.Add(leaf);
                                     }
                                 );
@@ -491,6 +502,53 @@ namespace StdfReader
                     else
                         node.Collapse();
                 }
+            }
+        }
+
+        private void BtnSearch_Click(object sender, EventArgs e)
+        {
+            TreeNode selectedNode = trvRecords.SelectedNode;
+            if(selectedNode != null)
+            {
+                if(!string.IsNullOrEmpty(txbFieldName.Text))
+                {
+                    string text = txbFieldName.Text.FirstCharToUpper(); // All field name have the first char in uppercase
+                    
+                    TreeNodeCollection nodes = selectedNode.Nodes;
+                    bool flag = false;
+                    for (int i = 0; i < nodes.Count && !flag; i++)
+                    {
+                        highlightedNode = nodes[i];
+                        if (highlightedNode.Text.Contains(text))
+                        {
+                            flag = true;
+
+                            highlightedNode.BackColor = ControlPaint.LightLight(Color.IndianRed);
+                            highlightedNode.ForeColor = SystemColors.ControlText;
+                        }
+                    }
+
+                    if(!flag)
+                        MessageBox.Show($"Field named '{text}' not found", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                {
+                    MessageBox.Show("Enter a record field name first", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    txbFieldName.Focus();
+                }
+            }
+            else
+                MessageBox.Show("No node selected, select one node first", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+
+        private void TrvRecords_Click(object sender, EventArgs e)
+        {
+            if (highlightedNode != null)
+            {
+                highlightedNode.BackColor = BackColor;
+                highlightedNode.ForeColor = SystemColors.Info;
+
+                highlightedNode = null;
             }
         }
 
