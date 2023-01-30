@@ -180,6 +180,7 @@
             this.txbFieldName.Name = "txbFieldName";
             this.txbFieldName.Size = new System.Drawing.Size(148, 28);
             this.txbFieldName.TabIndex = 10;
+            this.txbFieldName.KeyDown += new System.Windows.Forms.KeyEventHandler(this.TxbFieldName_KeyDown);
             // 
             // MainForm
             // 

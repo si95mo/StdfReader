@@ -505,6 +505,12 @@ namespace StdfReader
             }
         }
 
+        private void TxbFieldName_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+                BtnSearch_Click(this, new EventArgs());
+        }
+
         private void BtnSearch_Click(object sender, EventArgs e)
         {
             TreeNode selectedNode = trvRecords.SelectedNode;
