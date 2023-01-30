@@ -144,9 +144,12 @@ namespace StdfReader
             List<object> values = new List<object>();
 
             Type type = record.GetType();
+            PropertyInfo[] propertiesToExclude = typeof(StdfRecord).GetProperties();
             if (type != typeof(StartOfStreamRecord) && type != typeof(EndOfStreamRecord)) // Remove non-stdf related records (file stream)
             {
-                PropertyInfo[] properties = type.GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance);
+                // Get all properties aside from the ones of StdfRecord. This is done for records like HBR and SBR that inherits from an intermediate class
+                PropertyInfo[] allProperties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+                PropertyInfo[] properties = allProperties.Where((x) => !propertiesToExclude.Select((y) => y.Name).Contains(x.Name)).ToArray();
                 TreeNode root = new TreeNode(record.GetType().Name); // Root, first level node
 
                 if (index != -1)
@@ -212,7 +215,7 @@ namespace StdfReader
                                 byte[] bytes = value as byte[];
                                 bytes.ToList().ForEach((x) =>
                                     {
-                                        TreeNode leaf = new TreeNode($"0b{Convert.ToString((byte)x, toBase: 2).PadLeft(8, '0')}")
+                                        TreeNode leaf = new TreeNode($"0b{Convert.ToString(x, toBase: 2).PadLeft(8, '0')}")
                                         {
                                             ForeColor = SystemColors.Info
                                         };
@@ -238,8 +241,7 @@ namespace StdfReader
         /// <param name="text">The text based on which choose the <see cref="Color"/></param>
         void ColorNode(TreeNodeCollection nodes)
         {
-            string text = string.Empty;
-
+            string text;
             foreach (TreeNode child in nodes)
             {
                 text = child.Text;
